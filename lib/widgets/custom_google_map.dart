@@ -52,7 +52,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     locationService = LocationService();
 
     ///checkAndRequestLocationService();
-    updateMyLocation();
+    updateMyLocation(showErrorMessage);
 
     super.initState();
   }
@@ -209,17 +209,27 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     //circles.add(matamElauoty);
   }
 
-  void updateMyLocation() async {
-    await locationService.checkAndRequestLocationService();
-    bool hasPermission =
-        await locationService.checkAndRequestLocationPermission();
-    if (hasPermission) {
+  void updateMyLocation(Function(String) showError) async {
+    try {
+      await locationService.checkAndRequestLocationService();
+      await locationService.checkAndRequestLocationPermission();
+
       locationService.getRealtimeLocationData((locationData) {
         setMyLocationMarker(locationData);
         updateMyCamera(locationData);
       });
-    } else {
-      // todo : show error bar
+    } catch (e) {
+      // Handle exceptions here
+      if (e is LocationServiceException) {
+        // Handle LocationServiceException
+        showError('Location service is not enabled or cannot be enabled.');
+      } else if (e is LocationPermissionException) {
+        // Handle LocationPermissionException
+        showError('Location permission is not granted or cannot be granted.');
+      } else {
+        // Handle other exceptions
+        showError('An error occurred: $e');
+      }
     }
   }
 
@@ -252,5 +262,25 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     setState(() {
       print('############################');
     });
+  }
+
+  void showErrorMessage(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Error'),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Ok'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
