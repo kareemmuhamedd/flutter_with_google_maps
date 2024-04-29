@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_google_maps/core/utils/location_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class CustomGoogleMap2 extends StatefulWidget {
@@ -10,6 +11,7 @@ class CustomGoogleMap2 extends StatefulWidget {
 
 class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   late CameraPosition initialCameraPosition;
+  late LocationService locationService;
 
   @override
   void initState() {
@@ -18,6 +20,8 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
       31.257887239825866,
       32.29238692071138,
     ));
+    locationService = LocationService();
+    updateCurrentLocation();
     super.initState();
   }
 
@@ -27,5 +31,13 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
       initialCameraPosition: initialCameraPosition,
       zoomControlsEnabled: false,
     );
+  }
+
+  void updateCurrentLocation() async{
+    try {
+      var locationData = await locationService.getLocation();
+    } on Exception catch (e) {
+      // TODO
+    }
   }
 }

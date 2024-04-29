@@ -9,6 +9,8 @@ import 'dart:ui' as ui;
 
 import 'package:location/location.dart';
 
+import 'dialog_error.dart';
+
 class CustomGoogleMap extends StatefulWidget {
   const CustomGoogleMap({super.key});
 
@@ -52,7 +54,12 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     locationService = LocationService();
 
     ///checkAndRequestLocationService();
-    updateMyLocation(showErrorMessage);
+
+    updateMyLocation(context).then((errorMessage) {
+      if (errorMessage != null) {
+        showErrorMessage(message: errorMessage, context: context);
+      }
+    });
 
     super.initState();
   }
@@ -209,7 +216,7 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     //circles.add(matamElauoty);
   }
 
-  void updateMyLocation(Function(String) showError) async {
+  Future<String?> updateMyLocation(BuildContext context) async {
     try {
       await locationService.checkAndRequestLocationService();
       await locationService.checkAndRequestLocationPermission();
@@ -218,17 +225,19 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
         setMyLocationMarker(locationData);
         updateMyCamera(locationData);
       });
+
+      return null; // No error occurred
     } catch (e) {
       // Handle exceptions here
       if (e is LocationServiceException) {
         // Handle LocationServiceException
-        showError('Location service is not enabled or cannot be enabled.');
+        return 'Location service is not enabled or cannot be enabled.';
       } else if (e is LocationPermissionException) {
         // Handle LocationPermissionException
-        showError('Location permission is not granted or cannot be granted.');
+        return 'Location permission is not granted or cannot be granted.';
       } else {
         // Handle other exceptions
-        showError('An error occurred: $e');
+        return 'An error occurred: $e';
       }
     }
   }
@@ -264,23 +273,23 @@ class _CustomGoogleMapState extends State<CustomGoogleMap> {
     });
   }
 
-  void showErrorMessage(String message) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Error'),
-          content: Text(message),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Ok'),
-            ),
-          ],
-        );
-      },
-    );
-  }
+// void showErrorMessage(String message) {
+//   showDialog(
+//     context: context,
+//     builder: (BuildContext context) {
+//       return AlertDialog(
+//         title: const Text('Error'),
+//         content: Text(message),
+//         actions: <Widget>[
+//           TextButton(
+//             onPressed: () {
+//               Navigator.of(context).pop();
+//             },
+//             child: const Text('Ok'),
+//           ),
+//         ],
+//       );
+//     },
+//   );
+// }
 }
