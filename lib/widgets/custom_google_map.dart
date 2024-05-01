@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_google_maps/core/utils/location_service.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_google_maps/models/place_model.dart';
+import 'package:flutter_google_maps/models/fake_place_model.dart';
 import 'dart:ui' as ui;
 
 import 'package:location/location.dart';

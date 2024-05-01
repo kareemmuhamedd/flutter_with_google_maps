@@ -35,6 +35,7 @@ class LocationService {
       throw LocationPermissionException();
     }
   }
+
   /// this function is used if i need to tracking user location only
   void getRealtimeLocationData(void Function(LocationData)? onData) async {
     await checkAndRequestLocationService();

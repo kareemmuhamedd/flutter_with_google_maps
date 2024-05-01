@@ -10,9 +10,8 @@ class PlaceModel {
     required this.name,
     required this.latLng,
   });
-
-
 }
+
 List<PlaceModel> places = [
   PlaceModel(
     id: 1,

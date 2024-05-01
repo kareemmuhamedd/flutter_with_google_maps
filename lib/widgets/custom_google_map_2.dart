@@ -12,6 +12,8 @@ class CustomGoogleMap2 extends StatefulWidget {
 class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   late CameraPosition initialCameraPosition;
   late LocationService locationService;
+  late GoogleMapController googleMapController;
+  Set<Marker> markers = {};
 
   @override
   void initState() {
@@ -21,23 +23,55 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
       32.29238692071138,
     ));
     locationService = LocationService();
-    updateCurrentLocation();
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
     return GoogleMap(
+      markers: markers,
+      onMapCreated: (controller) {
+        googleMapController = controller;
+        updateCurrentLocation();
+      },
       initialCameraPosition: initialCameraPosition,
       zoomControlsEnabled: false,
     );
   }
 
-  void updateCurrentLocation() async{
+  Future<String?> updateCurrentLocation() async {
     try {
       var locationData = await locationService.getLocation();
+      LatLng currentPosition = LatLng(
+        locationData.latitude!,
+        locationData.longitude!,
+      );
+      Marker currentLocationMarker = Marker(
+        markerId: const MarkerId('myPosition'),
+        position: currentPosition,
+      );
+      CameraPosition myCurrentCameraPosition = CameraPosition(
+        target: currentPosition,
+        zoom: 16,
+      );
+      googleMapController.animateCamera(
+          CameraUpdate.newCameraPosition(myCurrentCameraPosition));
+      markers.add(currentLocationMarker);
+      setState(() {});
+      return null; // No error occurred
     } on Exception catch (e) {
-      // TODO
+      // Handle exceptions here
+      if (e is LocationServiceException) {
+        // Handle LocationServiceException
+        return 'Location service is not enabled or cannot be enabled.';
+      } else if (e is LocationPermissionException) {
+        // Handle LocationPermissionException
+        return 'Location permission is not granted or cannot be granted.';
+      } else {
+        // Handle other exceptions
+        return 'An error occurred: $e';
+      }
     }
   }
 }
