@@ -1,6 +1,12 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_google_maps/core/utils/google_maps_places_service.dart';
 import 'package:flutter_google_maps/core/utils/location_service.dart';
+import 'package:flutter_google_maps/models/place_autocomplete_model/place_autocomplete_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+import 'custom_map_search_field.dart';
+import 'custom_suggestions_list.dart';
 
 class CustomGoogleMap2 extends StatefulWidget {
   const CustomGoogleMap2({super.key});
@@ -13,7 +19,10 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   late CameraPosition initialCameraPosition;
   late LocationService locationService;
   late GoogleMapController googleMapController;
+  late TextEditingController searchController;
+  late GoogleMapsPlacesService googleMapsPlacesService;
   Set<Marker> markers = {};
+  List<PlaceAutocompleteModel> places = [];
 
   @override
   void initState() {
@@ -23,20 +32,74 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
       32.29238692071138,
     ));
     locationService = LocationService();
+    searchController = TextEditingController();
+
+    googleMapsPlacesService = GoogleMapsPlacesService();
+    fetchPredictions();
 
     super.initState();
   }
 
+  void fetchPredictions() {
+    searchController.addListener(
+      () async {
+        if (searchController.text.isNotEmpty) {
+          List<PlaceAutocompleteModel> result =
+              await googleMapsPlacesService.getPredictions(
+            input: searchController.text,
+          );
+          places.clear();
+          places.addAll(result);
+          setState(() {});
+        } else {
+          places.clear();
+          setState(() {});
+        }
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GoogleMap(
-      markers: markers,
-      onMapCreated: (controller) {
-        googleMapController = controller;
-        updateCurrentLocation();
-      },
-      initialCameraPosition: initialCameraPosition,
-      zoomControlsEnabled: false,
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            GoogleMap(
+              markers: markers,
+              onMapCreated: (controller) {
+                googleMapController = controller;
+                updateCurrentLocation();
+              },
+              initialCameraPosition: initialCameraPosition,
+              zoomControlsEnabled: false,
+            ),
+            Positioned(
+              top: 16,
+              left: 16,
+              right: 16,
+              child: Column(
+                children: [
+                  CustomMapSearchField(
+                    searchController: searchController,
+                  ),
+                  const SizedBox(height: 16),
+                  CustomSuggestionsList(
+                    places: places,
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
