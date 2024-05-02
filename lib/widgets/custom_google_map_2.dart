@@ -27,10 +27,11 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   @override
   void initState() {
     initialCameraPosition = const CameraPosition(
-        target: LatLng(
-      31.257887239825866,
-      32.29238692071138,
-    ));
+      target: LatLng(
+        31.257887239825866,
+        32.29238692071138,
+      ),
+    );
     locationService = LocationService();
     searchController = TextEditingController();
 
@@ -93,6 +94,7 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
                   const SizedBox(height: 16),
                   CustomSuggestionsList(
                     places: places,
+                    googleMapsPlacesService: googleMapsPlacesService,
                   )
                 ],
               ),

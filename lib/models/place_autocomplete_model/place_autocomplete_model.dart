@@ -11,7 +11,6 @@ class PlaceAutocompleteModel {
   List<Term>? terms;
   List<String>? types;
 
-
   PlaceAutocompleteModel({
     this.description,
     this.matchedSubstrings,
