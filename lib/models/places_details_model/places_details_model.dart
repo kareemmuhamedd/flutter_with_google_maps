@@ -56,7 +56,7 @@ class PlacesDetailsModel {
           .toList(),
       placeId: json['place_id'] as String?,
       reference: json['reference'] as String?,
-      types: (json['types'] as List<String>?)
+      types: (json['types'] as List<dynamic>?)
           ?.map((types) => types.toString())
           .toList(),
       url: json['url'] as String?,

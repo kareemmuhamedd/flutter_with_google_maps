@@ -7,12 +7,14 @@ import '../../models/place_autocomplete_model/place_autocomplete_model.dart';
 
 class GoogleMapsPlacesService {
   final String baseUrl = 'https://maps.googleapis.com/maps/api/place';
-  final String apiKey = 'AIzaSyAKOGW483EvisJTOBF8XsmbVxkI7jGEPFQ';
+  final String apiKey = 'AIzaSyA7oGbrXCoucWZc5P2vgYoii1hL22QWsqM';
 
-  Future<List<PlaceAutocompleteModel>> getPredictions(
-      {required String input}) async {
-    var response = await http
-        .get(Uri.parse('$baseUrl/autocomplete/json?key=$apiKey&input=$input'));
+  Future<List<PlaceAutocompleteModel>> getPredictions({
+    required String input,
+    required String sessionToken,
+  }) async {
+    var response = await http.get(Uri.parse(
+        '$baseUrl/autocomplete/json?key=$apiKey&input=$input&sessiontoken=$sessionToken'));
     if (response.statusCode == 200) {
       var data = jsonDecode(response.body)['predictions'];
       List<PlaceAutocompleteModel> places = [];
@@ -35,6 +37,6 @@ class GoogleMapsPlacesService {
       return PlacesDetailsModel.fromJson(data);
     } else {
       throw Exception();
-     }
+    }
   }
 }

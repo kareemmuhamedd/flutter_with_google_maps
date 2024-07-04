@@ -1,10 +1,13 @@
-import 'package:flutter/cupertino.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_google_maps/core/utils/google_maps_places_service.dart';
 import 'package:flutter_google_maps/core/utils/location_service.dart';
 import 'package:flutter_google_maps/models/place_autocomplete_model/place_autocomplete_model.dart';
+import 'package:flutter_google_maps/models/places_details_model/places_details_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:uuid/uuid.dart';
 
+import '../core/utils/helper.dart';
 import 'custom_map_search_field.dart';
 import 'custom_suggestions_list.dart';
 
@@ -21,8 +24,12 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   late GoogleMapController googleMapController;
   late TextEditingController searchController;
   late GoogleMapsPlacesService googleMapsPlacesService;
+  final TextFieldListenerUpdate textFieldListenerUpdate =
+      TextFieldListenerUpdate(delay: const Duration(milliseconds: 500));
   Set<Marker> markers = {};
   List<PlaceAutocompleteModel> places = [];
+  late Uuid uuid;
+  String? sessionToken;
 
   @override
   void initState() {
@@ -37,6 +44,7 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
 
     googleMapsPlacesService = GoogleMapsPlacesService();
     fetchPredictions();
+    uuid = const Uuid();
 
     super.initState();
   }
@@ -44,18 +52,25 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   void fetchPredictions() {
     searchController.addListener(
       () async {
-        if (searchController.text.isNotEmpty) {
-          List<PlaceAutocompleteModel> result =
-              await googleMapsPlacesService.getPredictions(
-            input: searchController.text,
-          );
-          places.clear();
-          places.addAll(result);
-          setState(() {});
-        } else {
-          places.clear();
-          setState(() {});
-        }
+        // Use textFieldListenerUpdate to delay clearing the list
+        textFieldListenerUpdate.run(() async {
+          sessionToken ??= uuid.v4();
+          if (searchController.text.isNotEmpty) {
+            List<PlaceAutocompleteModel> result =
+                await googleMapsPlacesService.getPredictions(
+              input: searchController.text,
+              sessionToken: sessionToken!,
+            );
+            setState(() {
+              places.clear();
+              places.addAll(result);
+            });
+          } else {
+            setState(() {
+              places.clear();
+            });
+          }
+        });
       },
     );
   }
@@ -95,6 +110,12 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
                   CustomSuggestionsList(
                     places: places,
                     googleMapsPlacesService: googleMapsPlacesService,
+                    onPlaceSelected: (PlacesDetailsModel placeDetailModel) {
+                      searchController.clear();
+                      places.clear();
+                      sessionToken = null;
+                      setState(() {});
+                    },
                   )
                 ],
               ),
