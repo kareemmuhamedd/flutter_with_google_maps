@@ -24,13 +24,14 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   late GoogleMapController googleMapController;
   late TextEditingController searchController;
 
-  final TextFieldListenerUpdate textFieldListenerUpdate =
-      TextFieldListenerUpdate(delay: const Duration(milliseconds: 500));
+  // final TextFieldListenerUpdate textFieldListenerUpdate =
+  //     TextFieldListenerUpdate(delay: const Duration(milliseconds: 500));
   Set<Marker> markers = {};
   Set<Polyline> polyLines = {};
+  Timer? debounce;
 
   List<PlaceAutocompleteModel> places = [];
-  late LatLng myCurrentLocation;
+
   late LatLng myDestination;
   late Uuid uuid;
   String? sessionToken;
@@ -53,9 +54,14 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
 
   void fetchPredictions() {
     searchController.addListener(
-      () async {
-        // Use textFieldListenerUpdate to delay clearing the list
-        textFieldListenerUpdate.run(() async {
+      () {
+        if (debounce?.isActive ?? false) {
+          debounce?.cancel();
+        }
+        debounce = Timer(
+            const Duration(
+              milliseconds: 200,
+            ), () async {
           sessionToken ??= uuid.v4();
           await mapServices.getPredictions(
             input: searchController.text,
@@ -71,6 +77,7 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
   @override
   void dispose() {
     searchController.dispose();
+    debounce?.cancel();
     super.dispose();
   }
 
@@ -115,7 +122,6 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
                         placeDetailModel.geometry!.location!.lng!,
                       );
                       var points = await mapServices.getRouteData(
-                        myCurrentLocation: myCurrentLocation,
                         myDestination: myDestination,
                       );
                       mapServices.displayRoute(
@@ -135,13 +141,14 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
     );
   }
 
-  Future<String?> updateCurrentLocation() async {
+  String? updateCurrentLocation() {
     try {
-      myCurrentLocation = await mapServices.updateCurrentLocation(
-        googleMapController: googleMapController,
-        markers: markers,
-      );
-      setState(() {});
+      mapServices.updateCurrentLocation(
+          googleMapController: googleMapController,
+          markers: markers,
+          onUpdateCurrentLocation: () {
+            setState(() {});
+          });
       return null; // No error occurred
     } on Exception catch (e) {
       // Handle exceptions here
