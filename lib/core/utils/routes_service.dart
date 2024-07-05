@@ -4,7 +4,7 @@ import 'package:flutter_google_maps/models/routes_model/routes_model.dart';
 import 'package:flutter_google_maps/models/routes_modifiers.dart';
 import 'package:http/http.dart' as http;
 
-import '../../models/location_info/location_info.dart';
+import '../../models/location_info_model/location_info.dart';
 
 class RoutesService {
   final String baseUrl =
@@ -12,8 +12,8 @@ class RoutesService {
   final String apikey = 'AIzaSyA7oGbrXCoucWZc5P2vgYoii1hL22QWsqM';
 
   Future<RoutesModel> fetchRoutes({
-    required LocationInfo origin,
-    required LocationInfo destination,
+    required LocationInfoModel origin,
+    required LocationInfoModel destination,
     RoutesModifiers? routesModifiers,
   }) async {
     Uri url = Uri.parse(baseUrl);
@@ -36,7 +36,7 @@ class RoutesService {
     var response = await http.post(
       url,
       headers: headers,
-      body: body,
+      body: jsonEncode(body),
     );
     if (response.statusCode == 200) {
       return RoutesModel.fromJson(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_google_maps/core/utils/google_maps_places_service.dart';
+import 'package:flutter_google_maps/core/utils/map_services.dart';
 import 'package:flutter_google_maps/models/places_details_model/places_details_model.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
@@ -7,13 +8,13 @@ import '../models/place_autocomplete_model/place_autocomplete_model.dart';
 
 class CustomSuggestionsList extends StatelessWidget {
   final List<PlaceAutocompleteModel> places;
-  final GoogleMapsPlacesService googleMapsPlacesService;
+  final MapServices mapServices;
   final void Function(PlacesDetailsModel) onPlaceSelected;
 
   const CustomSuggestionsList({
     super.key,
     required this.places,
-    required this.googleMapsPlacesService,
+    required this.mapServices,
     required this.onPlaceSelected,
   });
 
@@ -34,9 +35,8 @@ class CustomSuggestionsList extends StatelessWidget {
             ),
             trailing: IconButton(
               onPressed: () async {
-                var placeDetails =
-                    await googleMapsPlacesService.getPlaceDetails(
-                  placeId: places[index].placeId.toString(),
+                var placeDetails = await mapServices.getPlaceDetails(
+                  placeId: places[index].placeId!,
                 );
                 onPlaceSelected(placeDetails);
               },

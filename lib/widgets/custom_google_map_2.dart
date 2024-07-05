@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_google_maps/core/utils/google_maps_places_service.dart';
 import 'package:flutter_google_maps/core/utils/location_service.dart';
+import 'package:flutter_google_maps/core/utils/map_services.dart';
 import 'package:flutter_google_maps/models/place_autocomplete_model/place_autocomplete_model.dart';
 import 'package:flutter_google_maps/models/places_details_model/places_details_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:uuid/uuid.dart';
-
 import '../core/utils/helper.dart';
 import 'custom_map_search_field.dart';
 import 'custom_suggestions_list.dart';
@@ -19,15 +18,20 @@ class CustomGoogleMap2 extends StatefulWidget {
 }
 
 class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
+  late MapServices mapServices;
   late CameraPosition initialCameraPosition;
-  late LocationService locationService;
+
   late GoogleMapController googleMapController;
   late TextEditingController searchController;
-  late GoogleMapsPlacesService googleMapsPlacesService;
+
   final TextFieldListenerUpdate textFieldListenerUpdate =
       TextFieldListenerUpdate(delay: const Duration(milliseconds: 500));
   Set<Marker> markers = {};
+  Set<Polyline> polyLines = {};
+
   List<PlaceAutocompleteModel> places = [];
+  late LatLng myCurrentLocation;
+  late LatLng myDestination;
   late Uuid uuid;
   String? sessionToken;
 
@@ -39,10 +43,8 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
         32.29238692071138,
       ),
     );
-    locationService = LocationService();
+    mapServices = MapServices();
     searchController = TextEditingController();
-
-    googleMapsPlacesService = GoogleMapsPlacesService();
     fetchPredictions();
     uuid = const Uuid();
 
@@ -55,21 +57,12 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
         // Use textFieldListenerUpdate to delay clearing the list
         textFieldListenerUpdate.run(() async {
           sessionToken ??= uuid.v4();
-          if (searchController.text.isNotEmpty) {
-            List<PlaceAutocompleteModel> result =
-                await googleMapsPlacesService.getPredictions(
-              input: searchController.text,
-              sessionToken: sessionToken!,
-            );
-            setState(() {
-              places.clear();
-              places.addAll(result);
-            });
-          } else {
-            setState(() {
-              places.clear();
-            });
-          }
+          await mapServices.getPredictions(
+            input: searchController.text,
+            sessionToken: sessionToken!,
+            places: places,
+          );
+          setState(() {});
         });
       },
     );
@@ -89,6 +82,7 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
         child: Stack(
           children: [
             GoogleMap(
+              polylines: polyLines,
               markers: markers,
               onMapCreated: (controller) {
                 googleMapController = controller;
@@ -109,11 +103,26 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
                   const SizedBox(height: 16),
                   CustomSuggestionsList(
                     places: places,
-                    googleMapsPlacesService: googleMapsPlacesService,
-                    onPlaceSelected: (PlacesDetailsModel placeDetailModel) {
+                    mapServices: mapServices,
+                    onPlaceSelected:
+                        (PlacesDetailsModel placeDetailModel) async {
                       searchController.clear();
                       places.clear();
                       sessionToken = null;
+                      setState(() {});
+                      myDestination = LatLng(
+                        placeDetailModel.geometry!.location!.lat!,
+                        placeDetailModel.geometry!.location!.lng!,
+                      );
+                      var points = await mapServices.getRouteData(
+                        myCurrentLocation: myCurrentLocation,
+                        myDestination: myDestination,
+                      );
+                      mapServices.displayRoute(
+                        points,
+                        polyLines: polyLines,
+                        googleMapController: googleMapController,
+                      );
                       setState(() {});
                     },
                   )
@@ -128,22 +137,10 @@ class _CustomGoogleMap2State extends State<CustomGoogleMap2> {
 
   Future<String?> updateCurrentLocation() async {
     try {
-      var locationData = await locationService.getLocation();
-      LatLng currentPosition = LatLng(
-        locationData.latitude!,
-        locationData.longitude!,
+      myCurrentLocation = await mapServices.updateCurrentLocation(
+        googleMapController: googleMapController,
+        markers: markers,
       );
-      Marker currentLocationMarker = Marker(
-        markerId: const MarkerId('myPosition'),
-        position: currentPosition,
-      );
-      CameraPosition myCurrentCameraPosition = CameraPosition(
-        target: currentPosition,
-        zoom: 16,
-      );
-      googleMapController.animateCamera(
-          CameraUpdate.newCameraPosition(myCurrentCameraPosition));
-      markers.add(currentLocationMarker);
       setState(() {});
       return null; // No error occurred
     } on Exception catch (e) {
